@@ -39,11 +39,12 @@ const loadMoreTriggerBottomRef = ref<HTMLElement | null>(null);
 const rootRef = ref<HTMLElement | null>(null);
 const scrollContainerRef = ref<HTMLElement | null>(null);
 
+const multiples = 3;
 const loading = ref(false);
 const page = ref(0); // mount 되면서 1로 변경됨.
 const pageSize = 20;
 const prevDireciton = ref<"up" | "down">("down"); // 이전에 어느 방향에서 데이터를 불러왔는지 저장한다.
-const bufferSize = pageSize * 3; // 화면에 표시할 총 아이템의 갯수. 화면에 보이는 것과 화면 위와 아래에 표시할 것을 고려하여 버퍼 크기를 크기의 3배로 설정한다.
+const bufferSize = pageSize * multiples; // 화면에 표시할 총 아이템의 갯수. 화면에 보이는 것과 화면 위와 아래에 표시할 것을 고려하여 버퍼 크기를 크기의 3배로 설정한다.
 
 // 스크롤 처리 함수
 const loadItems = async (direction: "up" | "down") => {
@@ -56,9 +57,9 @@ const loadItems = async (direction: "up" | "down") => {
       direction === "down"
         ? prevDireciton.value === "down"
           ? page.value + 1
-          : page.value + 3
+          : page.value + multiples
         : prevDireciton.value === "down"
-        ? page.value - 3
+        ? page.value - multiples
         : page.value - 1;
 
     const response = await fetch(
@@ -84,7 +85,9 @@ const loadItems = async (direction: "up" | "down") => {
           const item = document.getElementsByClassName("item")[0];
           scrollContainerRef.value!.style.top = "";
           scrollContainerRef.value!.style.bottom =
-            (prevDireciton.value === "down" ? page.value - 2 : page.value) *
+            (prevDireciton.value === "down"
+              ? page.value - (multiples - 1)
+              : page.value) *
               -pageSize *
               item.getClientRects()[0].height +
             "px";
