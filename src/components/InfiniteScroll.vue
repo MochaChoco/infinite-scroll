@@ -1,11 +1,19 @@
 <template>
-  <div class="root" ref="root">
-    <div class="container" ref="scrollContainer">
-      <div ref="loadMoreTriggerTop" class="load-more-trigger-top"></div>
+  <div class="root" ref="rootRef">
+    <div class="container" ref="scrollContainerRef">
+      <div ref="loadMoreTriggerTopRef" class="load-more-trigger-top"></div>
       <div v-for="(item, index) in visibleItems" :key="index" class="item">
-        {{ item.id + ". " + item.first_name + " " + item.last_name }}
+        {{
+          item.id +
+          ". " +
+          item.first_name +
+          " " +
+          item.last_name +
+          " - " +
+          item.email
+        }}
       </div>
-      <div ref="loadMoreTriggerBottom" class="load-more-trigger"></div>
+      <div ref="loadMoreTriggerBottomRef" class="load-more-trigger"></div>
       <div v-if="loading" class="loading">Loading...</div>
     </div>
   </div>
@@ -13,23 +21,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted } from "vue";
-
-type DataType = {
-  first: number;
-  prev: null | number;
-  next: null | number;
-  last: number;
-  pages: number;
-  items: number;
-  data: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-    gender: string;
-    ip_address: string;
-  }[];
-};
+import { DataType } from "@/types";
 
 const totalItems = ref<DataType>({
   first: 1,
@@ -42,24 +34,22 @@ const totalItems = ref<DataType>({
 });
 const visibleItems = ref<DataType["data"]>([]);
 
-const loadMoreTriggerTop = ref(null);
-const loadMoreTriggerBottom = ref(null);
-const root = ref(null);
-const scrollContainer = ref(null);
+const loadMoreTriggerTopRef = ref<HTMLElement | null>(null);
+const loadMoreTriggerBottomRef = ref<HTMLElement | null>(null);
+const rootRef = ref<HTMLElement | null>(null);
+const scrollContainerRef = ref<HTMLElement | null>(null);
 
 const loading = ref(false);
 const page = ref(0);
 const pageSize = 20;
 const prevDireciton = ref<"up" | "down">("down");
 const bufferSize = pageSize * 3; // 버퍼 크기를 3페이지 크기로 설정
-const prevScrollTop = ref(0);
 
 const loadItems = async (direction: "up" | "down") => {
   if (loading.value) return;
   loading.value = true;
 
   try {
-    console.log(direction, prevDireciton.value, page.value);
     const newPage =
       direction === "down"
         ? prevDireciton.value === "down"
@@ -73,27 +63,23 @@ const loadItems = async (direction: "up" | "down") => {
       `http://localhost:3001/items?_page=${newPage}&_per_page=${pageSize}`
     );
     const data: DataType = await response.json();
-    // console.log(data.data);
-    let scrollTop;
 
     switch (direction) {
       case "down":
         // 스크롤 높이 추가
         if (page.value >= 1) {
-          scrollTop =
-            document.documentElement.scrollTop || document.body.scrollTop;
-
           const item = document.getElementsByClassName("item")[0];
           const rootHeight =
             (page.value + 1) * pageSize * item.getClientRects()[0].height;
-          root.value!.style.height = rootHeight + "px";
+          rootRef.value!.style.height = rootHeight + "px";
         }
         if (visibleItems.value.length < bufferSize) {
           visibleItems.value.push(...data.data);
         } else {
+          // 스크롤 위치 조정
           const item = document.getElementsByClassName("item")[0];
-          scrollContainer.value!.style.top = "";
-          scrollContainer.value!.style.bottom =
+          scrollContainerRef.value!.style.top = "";
+          scrollContainerRef.value!.style.bottom =
             (prevDireciton.value === "down" ? page.value - 2 : page.value) *
               -pageSize *
               item.getClientRects()[0].height +
@@ -107,17 +93,14 @@ const loadItems = async (direction: "up" | "down") => {
         }
         break;
       case "up":
-        // console.log(visibleItems.value.length, bufferSize);
         if (visibleItems.value.length < bufferSize) {
           visibleItems.value.unshift(...data.data);
         } else {
           const item = document.getElementsByClassName("item")[0];
-          // console.log(
-          //   scrollContainer.value!.style.bottom,
-          //   pageSize * item.getClientRects()[0].height
-          // );
-          scrollContainer.value!.style.bottom =
-            Number(scrollContainer.value!.style.bottom.replace("px", "")) +
+
+          // 스크롤 위치 조정
+          scrollContainerRef.value!.style.bottom =
+            Number(scrollContainerRef.value!.style.bottom.replace("px", "")) +
             pageSize * item.getClientRects()[0].height +
             "px";
 
@@ -131,10 +114,8 @@ const loadItems = async (direction: "up" | "down") => {
     }
 
     page.value = newPage;
-    console.log("page", page.value);
     totalItems.value = data;
     prevDireciton.value = direction;
-    prevScrollTop.value = scrollTop;
   } catch (error) {
     console.error("Failed to load items:", error);
   } finally {
@@ -142,7 +123,10 @@ const loadItems = async (direction: "up" | "down") => {
   }
 };
 
-const onIntersect = (entries, observer) => {
+const onIntersect = (
+  entries: IntersectionObserverEntry[],
+  observer: IntersectionObserver
+) => {
   if (entries[0].isIntersecting) {
     if (observer === observerBottom) {
       loadItems("down");
@@ -160,21 +144,21 @@ const observerBottom = new IntersectionObserver((entries) => {
 });
 
 onMounted(async () => {
-  if (loadMoreTriggerTop.value) {
-    observerTop.observe(loadMoreTriggerTop.value);
+  if (loadMoreTriggerTopRef.value) {
+    observerTop.observe(loadMoreTriggerTopRef.value);
   }
-  if (loadMoreTriggerBottom.value) {
-    observerBottom.observe(loadMoreTriggerBottom.value);
+  if (loadMoreTriggerBottomRef.value) {
+    observerBottom.observe(loadMoreTriggerBottomRef.value);
   }
   loadItems("down");
 });
 
 onUnmounted(() => {
-  if (loadMoreTriggerTop.value) {
-    observerTop.unobserve(loadMoreTriggerTop.value);
+  if (loadMoreTriggerTopRef.value) {
+    observerTop.unobserve(loadMoreTriggerTopRef.value);
   }
-  if (loadMoreTriggerBottom.value) {
-    observerBottom.unobserve(loadMoreTriggerBottom.value);
+  if (loadMoreTriggerBottomRef.value) {
+    observerBottom.unobserve(loadMoreTriggerBottomRef.value);
   }
 });
 </script>
