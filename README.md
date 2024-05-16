@@ -1,8 +1,8 @@
-## Intersection Observer API를 활용한 인피니티 스크롤
+## DOM 재사용하여 인피니티 스크롤 최적화하기
 
-![](https://velog.velcdn.com/images/swj9077/post/94415019-226d-46dd-90c7-8e82a0921219/image.gif)
+![ezgif-6-e99fa8d058](https://github.com/MochaChoco/infinite-scroll/assets/30750586/4472ce76-ce21-4f23-bb3b-9bee87a8fcb6)
 
-이 프로젝트는 Intersection Observer API를 활용한 인피니티 스크롤 최적화 기법을 구현한 것입니다. 이 프로젝트에서는 Object-pool 패턴을 적용하여 새로운 데이터를 로드할 때마다 새로운 DOM을 생성하는 것이 아니라, 미리 생성된 DOM을 재활용하여 성능을 최적화하는 방법을 구현했습니다.
+이 프로젝트는 DOM을 재사용하여 인피니티 스크롤을 최적화하는 예시를 보여주는 프로젝트입니다. 데이터를 로드할 때마다 새로운 DOM을 생성하는 것이 아니라, 미리 생성된 DOM을 재활용하여 성능을 최적화하는 방법을 구현했습니다.
 
 ## 설치 및 실행 방법
 
